@@ -30,6 +30,6 @@ class Widget extends Template
      */
     public function getWidgetUrl(): string
     {
-        return 'https://cdn.koply.eu/v1/koply.js';
+        return 'https://koply.eu/widget/koply.js';
     }
 }
