@@ -1,0 +1,84 @@
+<?php
+/** @var \Koply\Search\Block\Widget $block */
+
+if (!$block->isEnabled() || !$block->getApiKey()) {
+    return;
+}
+
+$apiKey    = $block->escapeHtmlAttr($block->getApiKey());
+$widgetUrl = $block->escapeUrl($block->getWidgetUrl());
+?>
+
+<!-- Koply Search Widget -->
+<script>
+window.KoplyConfig = {
+    apiKey:   '<?= /* @noEscape */ $apiKey ?>',
+    endpoint: 'https://api.koply.eu',
+};
+</script>
+<script src="<?= /* @noEscape */ $widgetUrl ?>" defer></script>
+
+<!-- Koply Add-to-Cart handler for Magento 2 -->
+<script>
+(function () {
+    'use strict';
+
+    document.addEventListener('koply.cart.add', function (event) {
+        var detail    = event.detail || {};
+        var entityId  = detail.entity_id;
+        var qty       = detail.qty || 1;
+
+        if (!entityId) {
+            console.warn('[Koply] koply.cart.add: missing entity_id');
+            return;
+        }
+
+        // Obtener form_key y uenc
+        var formKey = window.FORM_KEY
+            || (document.cookie.match(/form_key=([^;]+)/) || [])[1]
+            || '';
+
+        var uenc = btoa(window.location.href);
+
+        // Construir payload
+        var params = new URLSearchParams();
+        params.append('product', entityId);
+        params.append('qty', qty);
+        params.append('uenc', uenc);
+        params.append('form_key', formKey);
+
+        // POST a Magento 2 add-to-cart endpoint
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/checkout/cart/add/', true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    // Refrescar el mini-cart de Magento
+                    if (window.customerData) {
+                        window.customerData.reload(['cart'], true);
+                    }
+                    // Opcional: mostrar mensajes de Magento
+                    if (window.messages && window.messages.showMessages) {
+                        window.messages.showMessages();
+                    }
+                    // Disparar evento de éxito para que Koply pueda reaccionar
+                    document.dispatchEvent(new CustomEvent('koply.cart.added', {
+                        detail: { entity_id: entityId, qty: qty }
+                    }));
+                    // GA4 dataLayer
+                    window.dataLayer = window.dataLayer || [];
+                    window.dataLayer.push({ event: 'add_to_cart_koply' });
+                } else {
+                    console.warn('[Koply] add-to-cart failed', xhr.status);
+                }
+            }
+        };
+
+        xhr.send(params.toString());
+    });
+}());
+</script>
+<!-- /Koply Search Widget -->
