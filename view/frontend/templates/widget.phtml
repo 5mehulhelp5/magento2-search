@@ -19,6 +19,12 @@ window.KoplyConfig = {
 (function () {
     'use strict';
 
+    function koplyGetUenc() {
+        return btoa(window.location.href).replace(/[+/=]/g, function (c) {
+            return {'+': '-', '/': '_', '=': ','}[c];
+        });
+    }
+
     document.addEventListener('koply.cart.add', function (event) {
         var detail   = event.detail || {};
         var entityId = detail.entity_id;
@@ -32,12 +38,11 @@ window.KoplyConfig = {
         var formKey = window.FORM_KEY
             || (document.cookie.match(/form_key=([^;]+)/) || [])[1]
             || '';
-        var uenc = btoa(window.location.href);
 
         var params = new URLSearchParams();
         params.append('product', entityId);
         params.append('qty', qty);
-        params.append('uenc', uenc);
+        params.append('uenc', koplyGetUenc());
         params.append('form_key', formKey);
 
         var xhr = new XMLHttpRequest();
@@ -51,7 +56,12 @@ window.KoplyConfig = {
             }
 
             if (xhr.status === 200) {
-                // Evento genérico de éxito — cada tema conecta su propio handler
+                // Refresco del mini-cart estándar Magento 2 (Luma/Blank)
+                if (window.customerData && typeof window.customerData.reload === 'function') {
+                    window.customerData.reload(['cart'], true);
+                }
+
+                // Evento genérico de éxito para temas personalizados (Alpine, Hyvä, etc.)
                 document.dispatchEvent(new CustomEvent('koply.cart.added', {
                     detail: { entity_id: entityId, qty: qty }
                 }));
