@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<csp_whitelist xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Csp:etc/csp_whitelist.xsd">
+    <policies>
+
+        <!-- Script externo del widget -->
+        <policy id="script-src">
+            <values>
+                <value id="koply-widget" type="host">https://koply.eu</value>
+            </values>
+        </policy>
+
+        <!-- Llamadas XHR a la API de búsqueda y config -->
+        <policy id="connect-src">
+            <values>
+                <value id="koply-api" type="host">https://api.koply.eu</value>
+            </values>
+        </policy>
+
+    </policies>
+</csp_whitelist>
